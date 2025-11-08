@@ -175,8 +175,70 @@ public class MemoController {
 
 ---
 
+## 2-2단계: @RequestMapping으로 공통 경로 설정 (네 번째 커밋)
+
+### 변경 사항
+
+#### MemoController에 공통 경로 적용
+
+**Before (개별 경로):**
+```java
+@RestController
+@RequiredArgsConstructor
+public class MemoController {
+
+    @PostMapping("/memo")      // /memo
+    @GetMapping("/memos")      // /memos
+    @PutMapping("/memo/{index}")   // /memo/{index}
+    @DeleteMapping("/memo/{index}") // /memo/{index}
+}
+```
+
+**After (@RequestMapping 적용):**
+```java
+@RestController
+@RequestMapping("/api/v1/memos")  // 공통 경로
+@RequiredArgsConstructor
+public class MemoController {
+
+    @PostMapping              // /api/v1/memos
+    @GetMapping               // /api/v1/memos
+    @PutMapping("/{index}")   // /api/v1/memos/{index}
+    @DeleteMapping("/{index}") // /api/v1/memos/{index}
+}
+```
+
+### 핵심 개념
+
+#### `@RequestMapping`
+- 클래스 레벨에 적용하여 **공통 경로** 설정
+- 모든 메서드의 경로 앞에 자동으로 붙음
+- API 버전 관리, 리소스 그룹화에 유용
+
+### 장점
+1. **경로 일관성**: 모든 메모 관련 API가 `/api/v1/memos` 아래에 통일
+2. **유지보수성**: 공통 경로 변경 시 한 곳만 수정
+3. **API 버전 관리**: `/api/v1`, `/api/v2` 등으로 버전 구분 가능
+4. **RESTful 규칙 준수**: 리소스 중심 URL 구조
+
+### 변경된 API 엔드포인트
+
+| Before | After | 설명 |
+|--------|-------|------|
+| `POST /memo` | `POST /api/v1/memos` | 메모 추가 |
+| `GET /memos` | `GET /api/v1/memos` | 전체 조회 |
+| `PUT /memo/{index}` | `PUT /api/v1/memos/{index}` | 메모 수정 |
+| `DELETE /memo/{index}` | `DELETE /api/v1/memos/{index}` | 메모 삭제 |
+
+### 실무 패턴
+- `/api`: API임을 명시
+- `/v1`: 버전 정보
+- `/memos`: 리소스명 (복수형)
+
+---
+
 ## 다음 단계 예정
-- Repository 레이어 추가 (데이터베이스 연동)
+- **3단계: Repository + Entity 레이어 추가** (데이터 계층 분리)
 - DTO(Data Transfer Object) 사용
 - 예외 처리
 - 등등...
