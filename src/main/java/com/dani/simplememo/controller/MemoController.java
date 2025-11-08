@@ -12,16 +12,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.dani.simplememo.service.MemoService;
 
+import lombok.RequiredArgsConstructor;
+
 @RestController
+@RequiredArgsConstructor
 public class MemoController {
 
-    // Service 의존성 주입
+    // Service 의존성 주입 (생성자 자동 생성)
     private final MemoService memoService;
-
-    // 생성자 주입 (Spring이 자동으로 MemoService 객체를 넣어줌)
-    public MemoController(MemoService memoService) {
-        this.memoService = memoService;
-    }
 
     // POST: 메모 추가
     @PostMapping("/memo")

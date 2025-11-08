@@ -115,6 +115,66 @@ Service (비즈니스 로직)
 
 ---
 
+## 2-1단계: Lombok 적용 (세 번째 커밋)
+
+### 변경 사항
+
+#### 1. pom.xml에 Lombok 의존성 추가
+```xml
+<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+    <optional>true</optional>
+</dependency>
+```
+
+#### 2. MemoController 리팩토링
+
+**Before (생성자 직접 작성):**
+```java
+@RestController
+public class MemoController {
+    private final MemoService memoService;
+
+    // 생성자 직접 작성
+    public MemoController(MemoService memoService) {
+        this.memoService = memoService;  // this 사용
+    }
+}
+```
+
+**After (Lombok 적용):**
+```java
+@RestController
+@RequiredArgsConstructor  // Lombok이 생성자 자동 생성
+public class MemoController {
+    // Service 의존성 주입 (생성자 자동 생성)
+    private final MemoService memoService;
+
+    // 생성자 코드 삭제됨!
+}
+```
+
+### 핵심 개념
+
+#### `@RequiredArgsConstructor`
+- `final` 필드를 파라미터로 받는 생성자를 자동 생성
+- `this` 키워드 불필요
+- 코드 간결화 (보일러플레이트 제거)
+
+### 효과
+- 생성자 코드 3줄 제거
+- `this` 키워드 제거
+- 코드 더 깔끔하고 간결해짐
+- 실무 표준 패턴 적용
+
+### Lombok이란?
+- 반복적인 코드를 자동으로 생성해주는 라이브러리
+- Getter, Setter, 생성자, toString 등을 어노테이션으로 자동 생성
+- 실무 사용률: ~90%
+
+---
+
 ## 다음 단계 예정
 - Repository 레이어 추가 (데이터베이스 연동)
 - DTO(Data Transfer Object) 사용
