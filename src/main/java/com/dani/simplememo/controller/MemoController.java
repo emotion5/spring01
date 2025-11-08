@@ -1,6 +1,5 @@
 package com.dani.simplememo.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -11,43 +10,41 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.dani.simplememo.service.MemoService;
+
 @RestController
 public class MemoController {
 
-    // 메모를 저장할 메모리 (List)
-    private List<String> memos = new ArrayList<>();
+    // Service 의존성 주입
+    private final MemoService memoService;
+
+    // 생성자 주입 (Spring이 자동으로 MemoService 객체를 넣어줌)
+    public MemoController(MemoService memoService) {
+        this.memoService = memoService;
+    }
 
     // POST: 메모 추가
     @PostMapping("/memo")
     public String addMemo(@RequestBody String content) {
-        memos.add(content);
-        return "메모가 추가되었습니다: " + content;
+        return memoService.addMemo(content);
     }
 
     // GET: 모든 메모 조회
     @GetMapping("/memos")
     public List<String> getMemos() {
-        return memos;
+        return memoService.getAllMemos();
     }
 
     // PUT: 특정 메모 수정
     @PutMapping("/memo/{index}")
     public String updateMemo(@PathVariable int index, @RequestBody String content) {
-        if (index >= 0 && index < memos.size()) {
-            memos.set(index, content);
-            return "메모가 수정되었습니다: " + content;
-        }
-        return "메모를 찾을 수 없습니다";
+        return memoService.updateMemo(index, content);
     }
 
     // DELETE: 특정 메모 삭제
     @DeleteMapping("/memo/{index}")
     public String deleteMemo(@PathVariable int index) {
-        if (index >= 0 && index < memos.size()) {
-            String removed = memos.remove(index);
-            return "메모가 삭제되었습니다: " + removed;
-        }
-        return "메모를 찾을 수 없습니다";
+        return memoService.deleteMemo(index);
     } 
 
 
