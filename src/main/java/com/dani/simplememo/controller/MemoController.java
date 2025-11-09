@@ -1,19 +1,16 @@
 package com.dani.simplememo.controller;
 
-import java.util.List;
-
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import com.dani.simplememo.dto.MemoRequest;
+import com.dani.simplememo.dto.MemoResponse;
+import com.dani.simplememo.entity.Memo;
 import com.dani.simplememo.service.MemoService;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/memos")
@@ -25,27 +22,32 @@ public class MemoController {
 
     // POST: 메모 추가
     @PostMapping
-    public String addMemo(@RequestBody String content) {
-        return memoService.addMemo(content);
+    public MemoResponse addMemo(@RequestBody MemoRequest request) {
+        Memo memo = memoService.addMemo(request.getContent());
+        return MemoResponse.from(memo);
     }
 
     // GET: 모든 메모 조회
     @GetMapping
-    public List<String> getMemos() {
-        return memoService.getAllMemos();
+    public List<MemoResponse> getMemos() {
+        return memoService.getAllMemos().stream()
+                .map(MemoResponse::from)
+                .collect(Collectors.toList());
     }
 
     // PUT: 특정 메모 수정
-    @PutMapping("/{index}")
-    public String updateMemo(@PathVariable int index, @RequestBody String content) {
-        return memoService.updateMemo(index, content);
+    @PutMapping("/{id}")
+    public ResponseEntity<MemoResponse> updateMemo(@PathVariable Long id, @RequestBody MemoRequest request) {
+        Optional<Memo> updatedMemo = memoService.updateMemo(id, request.getContent());
+        return updatedMemo
+                .map(memo -> ResponseEntity.ok(MemoResponse.from(memo)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     // DELETE: 특정 메모 삭제
-    @DeleteMapping("/{index}")
-    public String deleteMemo(@PathVariable int index) {
-        return memoService.deleteMemo(index);
-    } 
-
-
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteMemo(@PathVariable Long id) {
+        boolean deleted = memoService.deleteMemo(id);
+        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    }
 }

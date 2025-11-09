@@ -237,8 +237,89 @@ public class MemoController {
 
 ---
 
+## 3단계: Entity + DTO 레이어 추가 (다섯 번째 커밋)
+
+### 구조
+```
+com.dani.simplememo/
+├── SimpleMemoApplication.java
+├── controller/
+│   └── MemoController.java (DTO 사용)
+├── service/
+│   └── MemoService.java (Entity 사용)
+├── entity/                    ✨ 신규
+│   └── Memo.java
+└── dto/                       ✨ 신규
+    ├── MemoRequest.java
+    └── MemoResponse.java
+```
+
+### 변경 사항
+
+#### 1. Entity 레이어 생성
+**Memo.java** - 도메인 모델 (비즈니스 데이터 구조)
+- `Long id`: 고유 식별자
+- `String content`: 메모 내용
+- `LocalDateTime createdAt, updatedAt`: 생성/수정 시간
+- JPA 어노테이션 없이 순수 Java 클래스로 시작 (나중에 JPA 전환 용이)
+
+#### 2. DTO 레이어 생성
+**MemoRequest.java** - API 요청 데이터
+- 클라이언트가 보내는 데이터 구조
+- `String content`만 포함
+
+**MemoResponse.java** - API 응답 데이터
+- 클라이언트에게 보내는 데이터 구조
+- `id`, `content`, `createdAt`, `updatedAt` 포함
+- static 팩토리 메서드로 Entity → DTO 변환
+
+#### 3. MemoService 리팩토링
+- `List<String>` → `List<Memo>` 변경
+- AtomicLong으로 ID 자동 생성
+- 타임스탬프 자동 관리
+
+#### 4. MemoController 리팩토링
+- `@RequestBody MemoRequest` 사용
+- `MemoResponse` 반환
+- Entity ↔ DTO 변환 처리
+
+### 핵심 개념
+
+#### Entity vs DTO
+- **Entity**: 비즈니스 로직과 데이터를 가진 도메인 객체
+- **DTO**: 계층 간 데이터 전송용 객체 (Data Transfer Object)
+
+#### 왜 분리하는가?
+1. **관심사 분리**: API 구조 변경이 도메인 모델에 영향 X
+2. **보안**: 민감한 정보를 선택적으로 노출
+3. **유연성**: API 응답과 도메인 모델을 독립적으로 설계
+4. **유지보수성**: 각 계층의 변경이 다른 계층에 미치는 영향 최소화
+
+#### entity vs domain 패키지 네이밍
+- **entity/**: JPA Entity를 명확히 표현 (이번 프로젝트 선택)
+- **domain/**: DDD 철학, 더 포괄적 개념 (Entity + Value Object + Domain Service)
+- 작은 프로젝트에서는 `entity/`가 더 직관적
+
+### 장점
+- String에서 구조화된 객체로 변경 (타입 안정성)
+- ID와 타임스탬프 자동 관리
+- API 계약(Request/Response)이 명확해짐
+- 나중에 H2/JPA 추가 시 최소한의 변경으로 전환 가능
+
+### 데이터 흐름
+```
+Client → MemoRequest → Controller → Memo(Entity) → Service
+         (JSON)                      (비즈니스 객체)
+
+Service → Memo(Entity) → Controller → MemoResponse → Client
+          (비즈니스 객체)              (JSON)
+```
+
+---
+
 ## 다음 단계 예정
-- **3단계: Repository + Entity 레이어 추가** (데이터 계층 분리)
-- DTO(Data Transfer Object) 사용
+- **4단계: Repository 레이어 추가** (데이터 접근 계층 분리)
+- **5단계: H2 Database + JPA 적용** (영속성 추가)
 - 예외 처리
+- Validation
 - 등등...

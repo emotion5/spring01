@@ -1,42 +1,57 @@
 package com.dani.simplememo.service;
 
+import com.dani.simplememo.entity.Memo;
+import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import org.springframework.stereotype.Service;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class MemoService {
 
-    // 메모를 저장할 메모리 (List)
-    private List<String> memos = new ArrayList<>();
+    // 메모를 저장할 메모리 (List<Memo>로 변경)
+    private final List<Memo> memos = new ArrayList<>();
+
+    // ID 자동 생성을 위한 카운터 (Thread-safe)
+    private final AtomicLong idCounter = new AtomicLong(1);
 
     // 메모 추가
-    public String addMemo(String content) {
-        memos.add(content);
-        return "메모가 추가되었습니다: " + content;
+    public Memo addMemo(String content) {
+        Memo memo = new Memo(
+                idCounter.getAndIncrement(),  // 자동 증가 ID
+                content
+        );
+        memos.add(memo);
+        return memo;
     }
 
     // 모든 메모 조회
-    public List<String> getAllMemos() {
-        return memos;
+    public List<Memo> getAllMemos() {
+        return new ArrayList<>(memos);  // 방어적 복사
+    }
+
+    // ID로 메모 조회
+    public Optional<Memo> getMemoById(Long id) {
+        return memos.stream()
+                .filter(memo -> memo.getId().equals(id))
+                .findFirst();
     }
 
     // 특정 메모 수정
-    public String updateMemo(int index, String content) {
-        if (index >= 0 && index < memos.size()) {
-            memos.set(index, content);
-            return "메모가 수정되었습니다: " + content;
+    public Optional<Memo> updateMemo(Long id, String content) {
+        Optional<Memo> memoOpt = getMemoById(id);
+        if (memoOpt.isPresent()) {
+            Memo memo = memoOpt.get();
+            memo.setContent(content);
+            return Optional.of(memo);
         }
-        return "메모를 찾을 수 없습니다";
+        return Optional.empty();
     }
 
     // 특정 메모 삭제
-    public String deleteMemo(int index) {
-        if (index >= 0 && index < memos.size()) {
-            String removed = memos.remove(index);
-            return "메모가 삭제되었습니다: " + removed;
-        }
-        return "메모를 찾을 수 없습니다";
+    public boolean deleteMemo(Long id) {
+        return memos.removeIf(memo -> memo.getId().equals(id));
     }
 }
