@@ -317,8 +317,130 @@ Service → Memo(Entity) → Controller → MemoResponse → Client
 
 ---
 
+## 4단계: Repository 레이어 추가 (여섯 번째 커밋)
+
+### 구조
+```
+com.dani.simplememo/
+├── SimpleMemoApplication.java
+├── controller/
+│   └── MemoController.java
+├── service/
+│   └── MemoService.java (Repository 사용)
+├── entity/
+│   └── Memo.java
+├── dto/
+│   ├── MemoRequest.java
+│   └── MemoResponse.java
+└── repository/                    ✨ 신규
+    ├── MemoRepository.java         ✨ 신규 (인터페이스)
+    └── InMemoryMemoRepository.java ✨ 신규 (구현체)
+```
+
+### 변경 사항
+
+#### 1. Repository 인터페이스 생성
+**MemoRepository.java** - 데이터 접근 계약 정의
+- `Memo save(Memo memo)`: 저장/수정
+- `List<Memo> findAll()`: 전체 조회
+- `Optional<Memo> findById(Long id)`: ID로 조회
+- `boolean deleteById(Long id)`: ID로 삭제
+
+#### 2. Repository 구현체 생성
+**InMemoryMemoRepository.java** - ArrayList 기반 구현
+- `@Repository` 어노테이션으로 Spring이 관리
+- Service에서 옮겨온 데이터 저장 로직
+- `List<Memo> memos` + `AtomicLong idCounter` 관리
+
+#### 3. MemoService 리팩토링
+**Before (데이터 접근 로직 포함):**
+- ArrayList 직접 관리
+- ID 생성 로직 포함
+- 데이터 조회 로직 포함
+
+**After (비즈니스 로직만):**
+- Repository 의존성 주입
+- 모든 데이터 접근을 Repository로 위임
+- 비즈니스 로직에만 집중
+
+### 핵심 개념
+
+#### Repository 패턴이란?
+데이터 저장소(ArrayList, Database 등)에 대한 접근을 추상화하는 패턴
+
+#### 계층별 책임 분리
+```
+Controller (HTTP 처리)
+    ↓
+Service (비즈니스 로직)
+    ↓
+Repository (데이터 접근)
+    ↓
+Data Store (ArrayList/Database)
+```
+
+#### 왜 분리하는가?
+1. **단일 책임 원칙**: Service는 비즈니스 로직만, Repository는 데이터 접근만
+2. **변경 용이성**: ArrayList → H2로 변경 시 Repository만 교체
+3. **테스트 용이성**: Service 테스트 시 가짜 Repository 사용 가능
+4. **재사용성**: 다른 Service에서도 같은 Repository 사용 가능
+
+### 장점
+
+#### 1. Service 코드 간결화
+**Before (18줄):**
+```java
+@Service
+public class MemoService {
+    private final List<Memo> memos = new ArrayList<>();
+    private final AtomicLong idCounter = new AtomicLong(1);
+
+    public Memo addMemo(String content) {
+        Memo memo = new Memo(
+                idCounter.getAndIncrement(),
+                content
+        );
+        memos.add(memo);
+        return memo;
+    }
+}
+```
+
+**After (5줄):**
+```java
+@Service
+@RequiredArgsConstructor
+public class MemoService {
+    private final MemoRepository memoRepository;
+
+    public Memo addMemo(String content) {
+        Memo memo = new Memo(null, content);
+        return memoRepository.save(memo);
+    }
+}
+```
+
+#### 2. 저장소 교체가 쉬움
+```java
+// 현재: ArrayList 사용
+public class InMemoryMemoRepository implements MemoRepository { ... }
+
+// 나중에: JPA 사용 (Service 코드 변경 없음!)
+public interface MemoRepository extends JpaRepository<Memo, Long> { ... }
+```
+
+#### 3. 관심사 분리
+- **Service**: "메모를 추가한다" (비즈니스 규칙)
+- **Repository**: "ArrayList에 저장한다" (기술적 세부사항)
+
+### 다음 단계를 위한 준비
+- Repository 인터페이스는 그대로 유지
+- InMemoryMemoRepository를 JpaRepository로 교체만 하면 됨
+- Service 코드는 전혀 수정할 필요 없음
+
+---
+
 ## 다음 단계 예정
-- **4단계: Repository 레이어 추가** (데이터 접근 계층 분리)
 - **5단계: H2 Database + JPA 적용** (영속성 추가)
 - 예외 처리
 - Validation
